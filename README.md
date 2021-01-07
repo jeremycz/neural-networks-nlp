@@ -4,6 +4,7 @@ Notes and code related to neural networks for NLP as part of CS224N
 ## Useful Links
 
 - [https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1194/](https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1194/)
+- [Sebastian Ruder](https://ruder.io/)
 
 ## Softmax classifier
 
@@ -157,6 +158,8 @@ $$
 $$
 
 ## Neural Networks: Tips and Tricks
+
+- [Link to document](https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1194/readings/cs224n-2019-notes03-neuralnets.pdf)
 
 ### Gradient Check
 
@@ -312,5 +315,77 @@ $$
 
 [Xavier, Bengio (2010) Understanding the difficulty of training deep feedforward neural networks.](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf?hc_location=ufi])
 
+- Good starting strategy is to initialise the weights to small random numberes normally distributed around zero
+- Xavier initialisation:
+  - Empirical findings - faster convergence and lower error rates when using sigmoid/tanh activations with the following initialisation strategy
+
+$$
+W \backsim U\left[-\sqrt{\frac{6}{n^{(l)}+n^{(l+1)}}},\sqrt{\frac{6}{n^{(l)}+n^{(l+1)}}}\right]
+$$
+
+where $n^{(l)}$ is the number of input units to $W$ and $n^{(l+1)}$ is the number of output units from $W$. 
+
+  - Biases are initialised to zero. 
+  - This approach aims to maintain activation variances and backpropagated gradient variances across layers (gradient variances generally decrease with backpropagation across layers)
+
 ### Learning Strategies
 
+Naive gradient descent:
+
+$$
+\theta^\textrm{new} = \theta^\textrm{old} - \alpha\nabla_\theta J(\theta)
+$$
+
+- High learning rate - overshoot, faster convergence not guaranteed
+- Small learning rate - slow convergence, may get stuck in local minima
+- Collobert - scale learning rate of a weight $W_{ij}$ by inverse square root of the fan-in (number of layer inputs) of the neuron, $n^{(l)}$
+
+$$
+W\in\mathcal{R}^{n^{(l+1)}\times n^{(l)}}
+$$
+
+#### Annealing
+
+- Reduce learning rate after a set number of iterations
+- Common methods: 
+  - Reduce learning rate by a factor of $x$ after every $n$ iterations
+  - Exponential decay - $\alpha(t) = \alpha_0\exp(-kt)$
+  - Constant then decay - $\alpha(t) = \alpha_0\tau / \max(t, \tau)$
+
+#### Momentum
+
+$$
+\begin{aligned}
+  v &= \mu v - \alpha\nabla_\theta J(\theta) \\
+  \theta &\leftarrow \theta + v
+\end{aligned}
+$$
+
+- The gradient increments the previous velocity
+- The velocity also decays by $\mu$ ($\mu < 1$, typically slightly less than 1)
+
+#### Adaptive Optimization
+
+- Learning rate can vary for each parameter
+- Learning rate depends on the history of gradient updates - parameters with a scarce history of updates are updated faster using a larger learning rate
+
+$$
+\theta_{t,i} = \theta_{t-1,i} - \frac{\alpha}{\sqrt{\sum_{\tau=1}^t g_{\tau,i}^2} + \epsilon}g_{t,i}
+$$
+
+where
+
+$$
+g_{t,i} = \frac{\partial}{\partial\theta_t^i}J(\theta)
+$$
+
+- Learning rates are scaled by the RMS of the gradient history (low RMS - high learning rate)
+
+- [AdaGrad - Duchi et al. (2011) Adaptive Subgradient Methods for Online Learning and Stochastic Optimization. JMLR 12 2121-2159](https://jmlr.org/papers/volume12/duchi11a/duchi11a.pdf)
+  - As shown above
+- [RMSPprop (unpublished work)](http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf)
+  - Version of AdaGrad which utilises a moving average of squared gradients
+- [Kingma, Ba (2014) Adam: A Method for Sochastic Optimization](https://arxiv.org/abs/1412.6980)
+  - Variant of RMSprop, with addition of momentum-like updates
+- [Overview of various optimization methods by Sebastian Ruder](https://ruder.io/optimizing-gradient-descent/index.html#fn14)
+  - [arXiv link](https://arxiv.org/abs/1609.04747)
